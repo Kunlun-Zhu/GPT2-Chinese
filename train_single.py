@@ -37,13 +37,15 @@ def build_files(raw_data_path, tokenized_data_path, full_tokenizer, num_pieces):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='0,1,2,3', type=str, required=False, help='设置使用哪些显卡')
-    parser.add_argument('--model_config', default='config/model_config_small.json', type=str, required=False,
+
+    parser.add_argument('--device', default='3', type=str, required=False, help='设置使用哪些显卡')
+    parser.add_argument('--model_config', default='./model_download/config.json', type=str, required=False,
                         help='选择模型参数')
-    parser.add_argument('--tokenizer_path', default='cache/vocab_small.txt', type=str, required=False, help='选择词库')
-    parser.add_argument('--raw_data_path', default='data/train.json', type=str, required=False, help='原始训练语料')
-    parser.add_argument('--tokenized_data_path', default='data/tokenized/', type=str, required=False,
+    parser.add_argument('--tokenizer_path', default='./model_download/vocab.txt', type=str, required=False, help='选择词库')
+    parser.add_argument('--raw_data_path', default='./train.json', type=str, required=False, help='原始训练语料')
+    parser.add_argument('--tokenized_data_path', default='model_download/vocab_processed.txt', type=str, required=False,
                         help='tokenized语料存放位置')
+
     parser.add_argument('--raw', action='store_true', help='是否先做tokenize')
     parser.add_argument('--epochs', default=5, type=int, required=False, help='训练循环')
     parser.add_argument('--batch_size', default=8, type=int, required=False, help='训练batch size')
