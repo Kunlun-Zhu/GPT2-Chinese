@@ -1,4 +1,4 @@
 python make_vocab.py \
-  --raw_data_path ../data/train.json \
-  --vocab_file vocab_user.txt \
-  --vocab_size 50000
+  --raw_data_path ../train.json \
+  --vocab_file ../model_download/vocab.txt \
+  --vocab_size 21128

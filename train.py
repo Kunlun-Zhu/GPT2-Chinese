@@ -11,7 +11,6 @@ from tqdm import tqdm
 from torch.nn import DataParallel
 from tokenizations.bpe_tokenizer import get_encoder
 
-
 def build_files(data_path, tokenized_data_path, num_pieces, full_tokenizer, min_length):
     with open(data_path, 'r', encoding='utf8') as f:
         print('reading lines')
@@ -32,7 +31,7 @@ def build_files(data_path, tokenized_data_path, num_pieces, full_tokenizer, min_
             full_line.append(full_tokenizer.convert_tokens_to_ids('[MASK]'))  # 文章开头添加MASK表示文章开始
             full_line.extend(subline)
             full_line.append(full_tokenizer.convert_tokens_to_ids('[CLS]'))  # 文章之间添加CLS表示文章结束
-        with open(tokenized_data_path + 'tokenized_train_{}.txt'.format(i), 'w') as f:
+        with open(tokenized_data_path, 'w') as f:
             for id in full_line:
                 f.write(str(id) + ' ')
     print('finish')
@@ -40,12 +39,12 @@ def build_files(data_path, tokenized_data_path, num_pieces, full_tokenizer, min_
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='0,1,2,3', type=str, required=False, help='设置使用哪些显卡')
-    parser.add_argument('--model_config', default='config/model_config_small.json', type=str, required=False,
+    parser.add_argument('--device', default='3', type=str, required=False, help='设置使用哪些显卡')
+    parser.add_argument('--model_config', default='./model_download/config.json', type=str, required=False,
                         help='选择模型参数')
-    parser.add_argument('--tokenizer_path', default='cache/vocab_small.txt', type=str, required=False, help='选择词库')
-    parser.add_argument('--raw_data_path', default='data/train.json', type=str, required=False, help='原始训练语料')
-    parser.add_argument('--tokenized_data_path', default='data/tokenized/', type=str, required=False,
+    parser.add_argument('--tokenizer_path', default='./model_download/vocab.txt', type=str, required=False, help='选择词库')
+    parser.add_argument('--raw_data_path', default='./train.json', type=str, required=False, help='原始训练语料')
+    parser.add_argument('--tokenized_data_path', default='model_download/vocab_processed.txt', type=str, required=False,
                         help='tokenized语料存放位置')
     parser.add_argument('--raw', action='store_true', help='是否先做tokenize')
     parser.add_argument('--epochs', default=5, type=int, required=False, help='训练循环')
@@ -60,13 +59,13 @@ def main():
     parser.add_argument('--max_grad_norm', default=1.0, type=float, required=False)
     parser.add_argument('--num_pieces', default=100, type=int, required=False, help='将训练语料分成多少份')
     parser.add_argument('--min_length', default=128, type=int, required=False, help='最短收录文章长度')
-    parser.add_argument('--output_dir', default='model/', type=str, required=False, help='模型输出路径')
-    parser.add_argument('--pretrained_model', default='', type=str, required=False, help='模型训练起点路径')
+    parser.add_argument('--output_dir', default='./model/', type=str, required=False, help='模型输出路径')
+    parser.add_argument('--pretrained_model', default='./model_download', type=str, required=False, help='模型训练起点路径')
     parser.add_argument('--writer_dir', default='tensorboard_summary/', type=str, required=False, help='Tensorboard路径')
     parser.add_argument('--segment', action='store_true', help='中文以词为单位')
     parser.add_argument('--bpe_token', action='store_true', help='subword')
-    parser.add_argument('--encoder_json', default="tokenizations/encoder.json", type=str, help="encoder.json")
-    parser.add_argument('--vocab_bpe', default="tokenizations/vocab.bpe", type=str, help="vocab.bpe")
+    parser.add_argument('--encoder_json', default="./tokenizations/encoder.json", type=str, help="encoder.json")
+    parser.add_argument('--vocab_bpe', default="./tokenizations/vocab.bpe", type=str, help="vocab.bpe")
 
     args = parser.parse_args()
     print('args:\n' + args.__repr__())
@@ -78,7 +77,7 @@ def main():
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.device  # 此处设置程序使用哪些显卡
 
-    model_config = transformers.modeling_gpt2.GPT2Config.from_json_file(args.model_config)
+    model_config = transformers.models.gpt2.GPT2Config.from_json_file(args.model_config)
     print('config:\n' + model_config.to_json_string())
 
     n_ctx = model_config.n_ctx
@@ -119,9 +118,9 @@ def main():
         print('files built')
 
     if not args.pretrained_model:
-        model = transformers.modeling_gpt2.GPT2LMHeadModel(config=model_config)
+        model = transformers.models.gpt2.GPT2LMHeadModel(config=model_config)
     else:
-        model = transformers.modeling_gpt2.GPT2LMHeadModel.from_pretrained(args.pretrained_model)
+        model = transformers.models.gpt2.GPT2LMHeadModel.from_pretrained(args.pretrained_model)
     model.train()
     model.to(device)
 
@@ -135,7 +134,7 @@ def main():
     full_len = 0
     print('calculating total steps')
     for i in tqdm(range(num_pieces)):
-        with open(tokenized_data_path + 'tokenized_train_{}.txt'.format(i), 'r') as f:
+        with open(tokenized_data_path, 'r') as f:
             full_len += len([int(item) for item in f.read().strip().split()])
     total_steps = int(full_len / stride * epochs / batch_size / gradient_accumulation)
     print('total steps = {}'.format(total_steps))
@@ -165,7 +164,7 @@ def main():
         random.shuffle(x)
         piece_num = 0
         for i in x:
-            with open(tokenized_data_path + 'tokenized_train_{}.txt'.format(i), 'r') as f:
+            with open(tokenized_data_path, 'r') as f:
                 line = f.read().strip()
             tokens = line.split()
             tokens = [int(token) for token in tokens]
